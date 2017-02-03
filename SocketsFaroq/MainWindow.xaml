@@ -5,16 +5,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SocketsFaroq"
         mc:Ignorable="d"
-        Title="MainWindow" Height="489.474" Width="697.368" ResizeMode="CanMinimize">
-    <Grid>
+        Title="MainWindow" Height="900" Width="697.368" ResizeMode="CanMinimize">
+    <Grid Margin="0,0,-6, -400">
         <TextBox x:Name="tbConsoleOutput" HorizontalAlignment="Left" Height="268" Margin="10,66,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="669" IsReadOnly="True"/>
-        <TextBox x:Name="tbIpAddress" HorizontalAlignment="Left" Height="23" Margin="10,352,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120"/>
+        <!--<TextBox x:Name="tbIpAddress" HorizontalAlignment="Left" Height="23" Margin="10,352,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120"/>-->
         <TextBox x:Name="tbPort" HorizontalAlignment="Left" Height="23" Margin="135,352,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="60"/>
         <Label x:Name="lblStatus" Content="Status" HorizontalAlignment="Left" Margin="35,27,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnStartServer" Content="Start Listening" HorizontalAlignment="Left" Margin="10,394,0,0" VerticalAlignment="Top" Width="120"/>
-        <Button x:Name="btnClose" Content="Exit" HorizontalAlignment="Left" Margin="559,394,0,0" VerticalAlignment="Top" Width="120"/>
-        <Button x:Name="btnSend" Content="Send" HorizontalAlignment="Left" Margin="313,351,0,0" VerticalAlignment="Top" Width="120"/>
-        <TextBox x:Name="tbMessage" HorizontalAlignment="Left" Height="23" Margin="438,352,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="229"/>
+        <Button x:Name="btnStartServer" Content="Start Listening" HorizontalAlignment="Left" Margin="10,385,0,0" VerticalAlignment="Top" Width="185"/>
+        <Button x:Name="btnClose" Content="Exit" HorizontalAlignment="Left" Margin="438,416,0,0" VerticalAlignment="Top" Width="241" RenderTransformOrigin="0.449,1.668"/>
+        <Button x:Name="btnSend" Content="Send" HorizontalAlignment="Left" Margin="438,380,0,0" VerticalAlignment="Top" Width="241"/>
+        <TextBox x:Name="tbMessage" HorizontalAlignment="Left" Height="23" Margin="438,352,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="241"/>
+        <ComboBox x:Name="cbIPAddress" HorizontalAlignment="Left" Margin="10,353,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="cbIPAddress_SelectionChanged"/>
+        <ListBox x:Name="lbClient" HorizontalAlignment="Left" Height="335" Margin="10,450,0,-325" VerticalAlignment="Top" Width="669" SelectionChanged="lbClient_SelectionChanged"/>
 
     </Grid>
 </Window>

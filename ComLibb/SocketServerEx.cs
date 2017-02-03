@@ -11,12 +11,44 @@ using System.Threading.Tasks;
 namespace ComLibb {
     public static class SocketServerEx {
         private static Socket listner = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        private static AutoResetEvent allDone = new AutoResetEvent(false);
         //private static IPHostEntry ipHostInfo = Dns.GetHostEntry("localhost");
         private static IPAddress ipAddress; // = ipHostInfo.AddressList[1];
-        static AutoResetEvent autoResetEvent = new AutoResetEvent(false);
         private static Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+        //static AutoResetEvent autoResetEvent = new AutoResetEvent(false);
+        static AutoResetEvent allDone = new AutoResetEvent(false);
+        static AutoResetEvent receivedDataEvent = new AutoResetEvent(false);
+        static AutoResetEvent clientConnectedDisconnectedEvent = new AutoResetEvent(false);
+
+        static List<Socket> socketList = new List<Socket>();
         private static string message;
+
+        public static string GetData() { return message; }
+
+        public static List<Socket> GetSockets() { return socketList; }
+
+        public static AutoResetEvent GetReceivedDataEvent() { return receivedDataEvent; }
+
+        public static AutoResetEvent GetClientConnectedDisconnectedEvent() { return clientConnectedDisconnectedEvent; }
+
+        public static List<string> GetAllIpAddresses()
+        {
+            List<string> strList = new List<string>();
+            string strIp = string.Empty;
+            IPHostEntry HostEntry = Dns.GetHostEntry(Dns.GetHostName());
+            if (HostEntry.AddressList.Length > 0)
+            {
+                foreach (IPAddress ip in HostEntry.AddressList)
+                {
+                    if (ip.AddressFamily == AddressFamily.InterNetwork) // Ta bara med IPv4 addresser
+                    {
+                        strIp = ip.ToString();
+                        strList.Add(strIp);
+                    }
+                }
+            }
+            return strList;
+        }
 
         public static string GetData() {
             return message;
@@ -26,9 +58,9 @@ namespace ComLibb {
             return ipAddress.ToString();
         }
 
-        public static AutoResetEvent GetAutoResetEvent() {
-            return autoResetEvent;
-        }
+        //public static AutoResetEvent GetAutoResetEvent() {
+        //    return autoResetEvent;
+        //}
 
         public static void CloseSocket() {
             listner.Close();
@@ -106,7 +138,7 @@ namespace ComLibb {
                     message = content;
                 }
                 
-                autoResetEvent.Set();
+                //autoResetEvent.Set();
 
                 //reset state and write data from message
                 state.sb.Clear();
