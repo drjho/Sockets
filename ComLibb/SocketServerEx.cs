@@ -1,166 +1,205 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
-namespace ComLibb {
-    public static class SocketServerEx {
-        private static Socket listner = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        //private static IPHostEntry ipHostInfo = Dns.GetHostEntry("localhost");
-        private static IPAddress ipAddress; // = ipHostInfo.AddressList[1];
-        private static Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-        //static AutoResetEvent autoResetEvent = new AutoResetEvent(false);
+namespace ComLib
+{
+    // State object for reading client data asynchronously
+    public class StateObject
+    {
+        // Client  socket.
+        public Socket workSocket = null;
+        // Size of receive buffer.
+        public const int BufferSize = 1024;
+        // Receive buffer.
+        public byte[] buffer = new byte[BufferSize];
+        // Received data string.
+        public StringBuilder sb = new StringBuilder();
+    }
+    
+    public class SocketServerEx
+    {
+        static Socket listener = new Socket(AddressFamily.InterNetwork,
+            SocketType.Stream, ProtocolType.Tcp);
         static AutoResetEvent allDone = new AutoResetEvent(false);
         static AutoResetEvent receivedDataEvent = new AutoResetEvent(false);
         static AutoResetEvent clientConnectedDisconnectedEvent = new AutoResetEvent(false);
-
-        static List<Socket> socketList = new List<Socket>();
-        private static string message;
-
+        
+        static List<Socket> sockets = new List<Socket>();
+        static string message;
         public static string GetData() { return message; }
 
-        public static List<Socket> GetSockets() { return socketList; }
+        public static List<Socket> GetSockets() { return sockets; }
 
         public static AutoResetEvent GetReceivedDataEvent() { return receivedDataEvent; }
-
         public static AutoResetEvent GetClientConnectedDisconnectedEvent() { return clientConnectedDisconnectedEvent; }
+        
 
+        public static void CloseSocket()
+        {
+            listener.Shutdown(SocketShutdown.Both);
+            listener.Close();
+        }
         public static List<string> GetAllIpAddresses()
         {
-            List<string> strList = new List<string>();
-            string strIp = string.Empty;
-            IPHostEntry HostEntry = Dns.GetHostEntry(Dns.GetHostName());
+            List<string> str = new List<string>();
+            string strIP = string.Empty;
+            IPHostEntry HostEntry = Dns.GetHostEntry((Dns.GetHostName()));
             if (HostEntry.AddressList.Length > 0)
             {
                 foreach (IPAddress ip in HostEntry.AddressList)
                 {
-                    if (ip.AddressFamily == AddressFamily.InterNetwork) // Ta bara med IPv4 addresser
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
                     {
-                        strIp = ip.ToString();
-                        strList.Add(strIp);
+                        strIP = ip.ToString();
+                        str.Add(strIP);
                     }
                 }
             }
-            return strList;
+            return str;
         }
+        public static void Send(string str)
+        {
+            byte[] tx;
+            try
+            {
+                str += "\n";
+                tx = Encoding.ASCII.GetBytes(str);
+                foreach (Socket clientSend in GetSockets())
+                {
+                    try
+                    {
+                        if (clientSend.Connected)
+                        {
+                            clientSend.Send(tx);
+                        }
+                    }
+                    catch
+                    {
+                        // If the send fails the close the connection
+                        clientSend.Close();
+                        GetSockets().Remove(clientSend);
+                    }
+                }
+              
+            }
+            catch (Exception exc)
+            {
 
-        public static string GetData() {
-            return message;
+                throw new Exception(exc.Message);
+            }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="iar"></param>
+        static void onCompleteWriteToClientStream(IAsyncResult iar)
+        {
 
-        public static string GetIp() {
-            return ipAddress.ToString();
+            try
+            {
+                Socket sc = (Socket)iar.AsyncState;
+                sc.EndSend(iar);
+
+            }
+            catch (Exception exc)
+            {
+
+                Debug.WriteLine(exc.Message);
+            }
+
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="strPort"></param>
+        /// <param name="strIPAdress"></param>
+        public static void StartListening(string strPort, string strIPAdress)
+        {
+            int port = int.Parse(strPort);
+            IPAddress ipAddress = IPAddress.Parse(strIPAdress);
+            IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
+            // Bind the socket to the local endpoint and listen for incoming connections.
+            try
+            {
+                listener.Bind(localEndPoint);
+                listener.Listen(100);
+                while (true)
+                {
+                    // Start an asynchronous socket to listen for connections.
+                    listener.BeginAccept(
+                        new AsyncCallback(AcceptCallback),
+                        listener);
 
-        //public static AutoResetEvent GetAutoResetEvent() {
-        //    return autoResetEvent;
-        //}
-
-        public static void CloseSocket() {
-            listner.Close();
-        }
-
-
-        public static void StartListening(string strPort, string strIp) {
-            //Databuffer
-            ipAddress = IPAddress.Parse(strIp);
-            var bytes = new byte[1024];
-            var port = int.Parse(strPort);
-            var localEndPoint = new IPEndPoint(ipAddress, port);
-            //bind socket to local endpoints and listen
-            try {
-                listner.Bind(localEndPoint);
-                listner.Listen(100);
-                while (true) {
-                    //start async socket listner
-                    listner.BeginAccept(new AsyncCallback(AcceptCallback), listner);
-
-                    //wait until connetion is made
+                    // Wait until a connection is made before continuing.
                     allDone.WaitOne();
                 }
+
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 Debug.WriteLine(e.Message);
             }
+
         }
 
-        private static void AcceptCallback(IAsyncResult ar) {
-            //signal mai to go on
+        public static void AcceptCallback(IAsyncResult ar)
+        {
+            // Signal the main thread to continue.
             allDone.Set();
-            var listner = (Socket) ar.AsyncState;
-            var handler = listner.EndAccept(ar);
-            //create state obj
-            var state = new StateObject();
-            state.workSocket = handler;
-            client = handler;
-            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
+            // Get the socket that handles the client request.
+            Socket listener = (Socket)ar.AsyncState;
+            Socket client = listener.EndAccept(ar);
+            sockets.Add(client);
+            clientConnectedDisconnectedEvent.Set();
+            // Create the state object.
+            StateObject state = new StateObject();
+            state.workSocket = client;
+            client.BeginReceive(state.buffer, 0, StateObject.BufferSize, SocketFlags.None,
+                new AsyncCallback(ReadCallback), state);
         }
 
-        private static void ReadCallback(IAsyncResult ar) {
-            var content = string.Empty;
-            //get state object and socket from async state obj
-            var state = (StateObject) ar.AsyncState;
-            var handler = state.workSocket;
-            //read data from client
-            var bytesRead = handler.EndReceive(ar);
-            if (bytesRead > 0) {
-                //store recived data
-                state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
+        public static void ReadCallback(IAsyncResult ar)
+        {
+            String content = String.Empty;
+
+            // Retrieve the state object and the client socket
+            // from the asynchronous state object.
+            StateObject state = (StateObject)ar.AsyncState;
+            Socket client = state.workSocket;
+            // Read data from the client socket. 
+            int bytesRead = client.EndReceive(ar);
+            if(bytesRead == 0)
+            {
+                // Telling ListBox to remove the client from the list of clients
+                sockets.Remove(client);
+                clientConnectedDisconnectedEvent.Set();
+                return;
             }
-
-            //check for end of file tag
-            content = state.sb.ToString();
-            var response = string.Empty;
-            if (content.IndexOf("\n") > -1) {
-                //all dead has been read
-                if (content == "time?\r\n") {
-                    response = "Response: "+ DateTime.Now.ToString();
-                    Send(response);
+            if (bytesRead > 0)
+            {
+                // There  might be more data, so store the data received so far.
+                state.sb.Append(Encoding.ASCII.GetString(
+                    state.buffer, 0, bytesRead));
+                // Check for end-of-line tag. If it is not there, read 
+                // more data.
+                content = state.sb.ToString();
+                if (content.IndexOf("\n") > -1)
+                {
+                    // All the data has been read from the 
+                    message = content + message;
+                    receivedDataEvent.Set();
+                    // Reset your state.sb      
+                    state.sb.Clear();
                 }
-                else if (content == "course?\r\n") {
-                    response = "Response: Network Programming";
-                    Send(response);
-                }
-                else if (content == "name?\r\n") {
-                    response = "Response: Viktor Gustafsson";
-                    Send(response);
-                }
-                if (response != "") {
-                    message = content + response + "\n";
-                }
-                else {
-                    message = content;
-                }
-                
-                //autoResetEvent.Set();
-
-                //reset state and write data from message
-                state.sb.Clear();
-                //wait for next message
-                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
+                // Wait for the next message.
+                client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                    new AsyncCallback(ReadCallback), state);
             }
-            else {
-                //not all data recived
-                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
-            }
-        }
-
-        public static void Send(string data) {
-            data = "\r\n" + data+"\r\n";
-            var msg = Encoding.ASCII.GetBytes(data);
-            client.BeginSend(msg, 0, data.Length, SocketFlags.None, new AsyncCallback(SendCallback), client);
-        }
-
-        private static void SendCallback(IAsyncResult ar) {
-            // Retrieve the socket from the state object.
-            var handler = (Socket) ar.AsyncState;
-            handler.EndSend(ar);
         }
     }
 }

@@ -47,8 +47,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SocketClientEx.cs" />
     <Compile Include="SocketServerEx.cs" />
     <Compile Include="StateObject.cs" />
+    <Compile Include="TcpClientEx.cs" />
+    <Compile Include="TcpListnerEx.cs" />
+    <Compile Include="TcpListnerEx2.cs" />
+    <Compile Include="UdpClientEx.cs" />
+    <Compile Include="UdpServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
