@@ -1,0 +1,31 @@
+﻿<Window x:Class="TcpServerUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TcpServerUI"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="700" Width="800">
+    <Grid Margin="10,0,4.2,0.4">
+
+        <TextBox x:Name="tbConsoleOutPut" HorizontalAlignment="Left" Height="268" Margin="5,37,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="768" RenderTransformOrigin="0.5,0.5">
+            <TextBox.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform AngleX="-0.873"/>
+                    <RotateTransform Angle="-0.36"/>
+                    <TranslateTransform X="-1.752"/>
+                </TransformGroup>
+            </TextBox.RenderTransform>
+        </TextBox>
+        <TextBox x:Name="tbPort" HorizontalAlignment="Left" Height="28" Margin="267,310,0,0" TextWrapping="Wrap" Text="23000" VerticalAlignment="Top" Width="79"/>
+        <Button x:Name="btnStartServer" Content="Start Listening" HorizontalAlignment="Left" Margin="54,348,0,0" VerticalAlignment="Top" Width="292" RenderTransformOrigin="0.922,0.863" Height="28" Click="btnStartServer_Click"/>
+        <Label x:Name="label" Content="IP/Port:" HorizontalAlignment="Left" Margin="6,307,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.35,0.417"/>
+        <Button x:Name="btnExit" Content="Close socket" HorizontalAlignment="Left" Margin="685,393,0,0" VerticalAlignment="Top" Width="88" Click="btnExit_Click"/>
+        <Label x:Name="lbStatus" Content="Status" HorizontalAlignment="Left" Margin="5,7,0,0" VerticalAlignment="Top" Height="32" Width="138"/>
+        <TextBox x:Name="tbPayLoad" HorizontalAlignment="Left" Height="28" Margin="525,310,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="245"/>
+        <Button x:Name="btnSend" Content="Send" HorizontalAlignment="Left" Margin="525,348,0,0" VerticalAlignment="Top" Width="245" Height="28" Click="btnSend_Click"/>
+        <ComboBox x:Name="cbIPAddresses" Margin="54,310,521.8,330.6" />
+        <ListBox x:Name="lbClients" HorizontalAlignment="Left" Height="164" Margin="10,450,0,0" VerticalAlignment="Top" Width="763"/>
+    </Grid>
+</Window>

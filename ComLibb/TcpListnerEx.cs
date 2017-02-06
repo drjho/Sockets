@@ -14,14 +14,20 @@ namespace ComLib
     public class TcpListnerEx
     {
         TcpListener tcpListner;
-        TcpClient tcpClient;
+        //TcpClient tcpClient;
         StringBuilder strTotal = new StringBuilder();
         string str = string.Empty;
         //StreamWriter outFile = File.CreateText(@"serverlog.txt");
         StreamWriter outFile = new StreamWriter(@"serverlog.txt", true);
-        AutoResetEvent autoResetEvent = new AutoResetEvent(false);
-        public string GetData() { return str; }
-        public AutoResetEvent GetAutoResetEvent() { return autoResetEvent; }
+
+        //public AutoResetEvent AllDone { get; set; } = new AutoResetEvent(false);
+        public AutoResetEvent ReceivedDataEvent { get; set; } = new AutoResetEvent(false);
+        public AutoResetEvent ClientConnectedDisconnectedEvent { get; set; } = new AutoResetEvent(false);
+
+        public List<TcpClient> ClientList { get; set; } = new List<TcpClient>();
+
+        public string GetData() { string tmp = str; str = ""; return tmp; }
+        //public AutoResetEvent GetAutoResetEvent() { return autoResetEvent; }
         public void RemoveReadDataFromStrTotal(int count)
         {
             strTotal.Remove(0, count);
@@ -40,15 +46,15 @@ namespace ComLib
                 tcpListner.Start();
                 outFile.WriteLine("Server Started at: " + DateTime.Now.ToString("h:mm:ss tt"));
                 outFile.Flush();
-                tcpListner.BeginAcceptTcpClient(onCompleteAcceptTcpClient, tcpListner);
+                tcpListner.BeginAcceptTcpClient(onCompleteAcceptTcpClientCallback, tcpListner);
             }
-            catch(System.Net.Sockets.SocketException ex)
+            catch (System.Net.Sockets.SocketException ex)
             {
                 outFile.WriteLine(ex.Message);
                 outFile.Flush();
                 throw new Exception(ex.Message);
             }
-            catch(System.ArgumentOutOfRangeException ex)
+            catch (System.ArgumentOutOfRangeException ex)
             {
                 outFile.WriteLine(ex.Message);
                 outFile.Flush();
@@ -60,69 +66,95 @@ namespace ComLib
                 outFile.Flush();
                 throw new Exception(ex.Message);
             }
-            
+
 
         }
+
+        public static List<string> GetAllIpAddresses()
+        {
+            List<string> str = new List<string>();
+            string strIP = string.Empty;
+            IPHostEntry HostEntry = Dns.GetHostEntry((Dns.GetHostName()));
+            if (HostEntry.AddressList.Length > 0)
+            {
+                foreach (IPAddress ip in HostEntry.AddressList)
+                {
+                    if (ip.AddressFamily == AddressFamily.InterNetwork) // Tar bara med IPv4 adresser.
+                    {
+                        strIP = ip.ToString();
+                        str.Add(strIP);
+                    }
+                }
+            }
+            return str;
+        }
+
         //
         /// <summary>
         /// Callback method is called when a client has been connected
         /// </summary>
         /// <param name="iar"></param>
-        void onCompleteAcceptTcpClient(IAsyncResult iar)
+        void onCompleteAcceptTcpClientCallback(IAsyncResult iar)
         {
             TcpListener tcpl = (TcpListener)iar.AsyncState;
             try
             {
-                tcpClient = tcpl.EndAcceptTcpClient(iar);
-                // 
+                var tcpClient = tcpl.EndAcceptTcpClient(iar);   // Nu har vi tagit emot en klient.
+                ClientList.Add(tcpClient);                      // Lägg klienten till listan.
+                ClientConnectedDisconnectedEvent.Set();         // Nu kan man uppdatera Klientlistan på GUI.
+
                 outFile.WriteLine(tcpClient.Client.RemoteEndPoint.ToString());
                 outFile.Flush();
-                rx = new byte[512];
-                tcpClient.GetStream().BeginRead(rx, 0, rx.Length, OnComplateReadFromTCPClientStream, tcpClient);
+                rx = new byte[512];                             // Varför just 512 ??
+                tcpClient.GetStream().BeginRead(rx, 0, rx.Length, OnCompleteReadFromTCPClientStreamCallback, tcpClient); // Väntar på klienten ska skicka nåt och när det är läst så starta "OnCompleteReadFromTCPClientStreamCallback".
             }
-            catch(Exception exc)
+            catch (Exception exc)
             {
-               
+
                 outFile.WriteLine(exc.Message);
                 outFile.Flush();
             }
         }
+
         /// <summary>
         /// Called when data is recieved
         /// </summary>
         /// <param name="iar"></param>
-        void OnComplateReadFromTCPClientStream(IAsyncResult iar)
+        void OnCompleteReadFromTCPClientStreamCallback(IAsyncResult iar)
         {
             TcpClient tcpc;
             int countReadBytes = 0;
             string strRecv;
+            tcpc = (TcpClient)iar.AsyncState;
             try
             {
-                tcpc = (TcpClient)iar.AsyncState;
                 countReadBytes = tcpc.GetStream().EndRead(iar);
-                if(countReadBytes == 0)
+                if (countReadBytes == 0)
                 {
-                    //;
                     outFile.WriteLine("Client disconnected");
                     outFile.Flush();
                     Debug.WriteLine("Client disconnected");
-                    autoResetEvent.Set();
+                    ReceivedDataEvent.Set();
                     return;
                 }
 
                 strRecv = Encoding.ASCII.GetString(rx, 0, rx.Length);
                 str = strRecv + Environment.NewLine;
-                autoResetEvent.Set();
+                ReceivedDataEvent.Set();
                 rx = new byte[1];
-                tcpc.GetStream().BeginRead(rx, 0, rx.Length, OnComplateReadFromTCPClientStream, tcpc);
+                tcpc.GetStream().BeginRead(rx, 0, rx.Length, OnCompleteReadFromTCPClientStreamCallback, tcpc);
             }
             catch (Exception exc)
             {
                 outFile.WriteLine(exc.Message);
                 outFile.Flush();
+                // för att loopen inte ska brytas.
+                rx = new byte[1];
+                tcpc.GetStream().BeginRead(rx, 0, rx.Length, OnCompleteReadFromTCPClientStreamCallback, tcpc);
+
             }
         }
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -131,17 +163,16 @@ namespace ComLib
         {
             try
             {
-                if (tcpClient != null)
+                foreach (var client in ClientList)
                 {
-                    if (tcpClient.Client.Connected)
+                    if (client.Client.Connected)
                     {
-                        tcpClient.GetStream().BeginWrite(data, 0, data.Length, onCompleteWriteToClientStream, tcpClient);
+                        client.GetStream().BeginWrite(data, 0, data.Length, onCompleteWriteToClientStream, client);
                     }
-
-                }
-                else
-                {
-                    throw new Exception("No client connected");
+                    else
+                    {
+                        throw new Exception("No client connected");
+                    }
                 }
             }
             catch (Exception exc)
@@ -150,7 +181,7 @@ namespace ComLib
                 outFile.Flush();
                 throw new Exception(exc.Message);
             }
-        
+
         }
         /// <summary>
         /// 
@@ -158,12 +189,10 @@ namespace ComLib
         /// <param name="iar"></param>
         void onCompleteWriteToClientStream(IAsyncResult iar)
         {
-
             try
             {
                 TcpClient tcpc = (TcpClient)iar.AsyncState;
                 tcpc.GetStream().EndWrite(iar);
-
             }
             catch (Exception exc)
             {
@@ -171,12 +200,13 @@ namespace ComLib
                 outFile.Flush();
                 Debug.WriteLine(exc.Message);
             }
-        
         }
 
         public void CloseOutputFile()
         {
             outFile.Close();
         }
+
     }
 }
+

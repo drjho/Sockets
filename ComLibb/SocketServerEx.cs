@@ -28,7 +28,7 @@ namespace ComLib
         static AutoResetEvent receivedDataEvent = new AutoResetEvent(false);
         static AutoResetEvent clientConnectedDisconnectedEvent = new AutoResetEvent(false);
 
-        static List<Socket> sockets = new List<Socket>();
+        static List<Socket> sockets { get; set; } = new List<Socket>();
         static string message;
         public static string GetData() { return message; }
 

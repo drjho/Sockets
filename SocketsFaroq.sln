@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketServerUI", "SocketSer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebClientEx", "WebClientEx\WebClientEx.csproj", "{D21EE8F9-13AA-44D8-94B7-8CF3EFB8F4FE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TcpServerUI", "TcpServerUI\TcpServerUI.csproj", "{1E022F14-B03C-4291-9497-C047379B684F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpClientEx", "HttpClientEx\HttpClientEx.csproj", "{03B02076-227B-41A2-BF43-624D1A1521AA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{D21EE8F9-13AA-44D8-94B7-8CF3EFB8F4FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D21EE8F9-13AA-44D8-94B7-8CF3EFB8F4FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D21EE8F9-13AA-44D8-94B7-8CF3EFB8F4FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E022F14-B03C-4291-9497-C047379B684F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E022F14-B03C-4291-9497-C047379B684F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E022F14-B03C-4291-9497-C047379B684F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E022F14-B03C-4291-9497-C047379B684F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03B02076-227B-41A2-BF43-624D1A1521AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03B02076-227B-41A2-BF43-624D1A1521AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03B02076-227B-41A2-BF43-624D1A1521AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03B02076-227B-41A2-BF43-624D1A1521AA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
