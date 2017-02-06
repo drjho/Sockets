@@ -19,7 +19,7 @@ namespace ComLib
         // The response from the remote device.
         static byte[] rx;
         private static String response = String.Empty;
-        static List<string> receivedMessage;
+        static List<string> receivedMessage = new List<string>();
         static AutoResetEvent autoResetEvent = new AutoResetEvent(false);
         public static void Close()
         {

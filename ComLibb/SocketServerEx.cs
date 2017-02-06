@@ -20,15 +20,14 @@ namespace ComLib
         // Received data string.
         public StringBuilder sb = new StringBuilder();
     }
-    
+
     public class SocketServerEx
     {
-        static Socket listener = new Socket(AddressFamily.InterNetwork,
-            SocketType.Stream, ProtocolType.Tcp);
+        static Socket listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         static AutoResetEvent allDone = new AutoResetEvent(false);
         static AutoResetEvent receivedDataEvent = new AutoResetEvent(false);
         static AutoResetEvent clientConnectedDisconnectedEvent = new AutoResetEvent(false);
-        
+
         static List<Socket> sockets = new List<Socket>();
         static string message;
         public static string GetData() { return message; }
@@ -37,7 +36,7 @@ namespace ComLib
 
         public static AutoResetEvent GetReceivedDataEvent() { return receivedDataEvent; }
         public static AutoResetEvent GetClientConnectedDisconnectedEvent() { return clientConnectedDisconnectedEvent; }
-        
+
 
         public static void CloseSocket()
         {
@@ -53,7 +52,7 @@ namespace ComLib
             {
                 foreach (IPAddress ip in HostEntry.AddressList)
                 {
-                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    if (ip.AddressFamily == AddressFamily.InterNetwork) // Tar bara med IPv4 adresser.
                     {
                         strIP = ip.ToString();
                         str.Add(strIP);
@@ -75,7 +74,9 @@ namespace ComLib
                     {
                         if (clientSend.Connected)
                         {
-                            clientSend.Send(tx);
+                            Debug.WriteLine(clientSend.SendTimeout);
+                            //clientSend.Send(tx);
+                            clientSend.BeginSend(tx, 0, tx.Length, 0, onCompleteWriteToClientStream, clientSend);
                         }
                     }
                     catch
@@ -85,8 +86,9 @@ namespace ComLib
                         GetSockets().Remove(clientSend);
                     }
                 }
-              
+
             }
+            
             catch (Exception exc)
             {
 
@@ -97,6 +99,7 @@ namespace ComLib
         /// 
         /// </summary>
         /// <param name="iar"></param>
+        //[Obsolete("Single client only")]
         static void onCompleteWriteToClientStream(IAsyncResult iar)
         {
 
@@ -173,7 +176,7 @@ namespace ComLib
             Socket client = state.workSocket;
             // Read data from the client socket. 
             int bytesRead = client.EndReceive(ar);
-            if(bytesRead == 0)
+            if (bytesRead == 0)
             {
                 // Telling ListBox to remove the client from the list of clients
                 sockets.Remove(client);
